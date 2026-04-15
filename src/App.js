@@ -33,18 +33,28 @@ const INITIAL_POSTS = [
 ];
 
 // 혐오표현 탐지 API 호출
+// 혐오표현 탐지 API 호출 부분 수정
 const checkHate = async (text) => {
   try {
-    const response = await fetch("http://localhost:8000/check", {
+    // 1. 방금 찾은 허깅페이스 Direct URL 뒤에 /predict를 붙입니다.
+    const response = await fetch("https://jinwoo1251a-instagram-hate-detector.hf.space/predict", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ text }),
+      // 2. 서버(FastAPI)에서 'text'라는 이름으로 받기로 했으니 그대로 맞춰줍니다.
+      body: JSON.stringify({ text: text }),
     });
+
+    if (!response.ok) throw new Error("네트워크 응답에 문제가 있습니다.");
+
     const data = await response.json();
-    return data.is_hate;
+    
+    // 3. 서버 응답 결과(is_hate: true/false)를 반환합니다.
+    console.log("AI 판독 결과:", data);
+    return data.is_hate; 
+    
   } catch (error) {
-    // API 연결 전 임시: 무조건 false 반환
-    console.log("API 미연결 상태 - 혐오표현 탐지 비활성화");
+    console.error("AI 서버 연결 실패:", error);
+    // 서버가 꺼져있을 경우 안전하게 false(정상)를 반환하거나 에러 처리를 합니다.
     return false;
   }
 };
