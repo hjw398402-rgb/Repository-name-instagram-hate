@@ -1,68 +1,46 @@
 import { useState } from "react";
-import { AiOutlineHeart, AiFillHeart } from "react-icons/ai";
+import { AiOutlineHeart, AiFillHeart, AiOutlineBell } from "react-icons/ai";
 import { BsThreeDots, BsChat, BsCursor, BsBookmark } from "react-icons/bs";
 import "./App.css";
 
-// 임시 게시물 데이터
 const INITIAL_POSTS = [
   {
     id: 1,
     user: "user_01",
     avatar: "https://i.pravatar.cc/40?img=1",
-    image: "https://picsum.photos/seed/post1/600/600",
-    caption: "오늘 하루도 좋은 하루 😊",
+    image: "https://picsum.photos/seed/post1/800/800",
+    caption: "오늘 하루도 좋은 하루 😊 #데일리",
     likes: 128,
     liked: false,
     comments: [
-      { id: 1, user: "friend_01", text: "완전 좋다!", blind: false },
+      { id: 1, user: "friend_01", text: "뷰우우우byu응!신이나", blind: false },
       { id: 2, user: "friend_02", text: "부럽다 ㅠㅠ", blind: false },
-    ],
-  },
-  {
-    id: 2,
-    user: "user_02",
-    avatar: "https://i.pravatar.cc/40?img=2",
-    image: "https://picsum.photos/seed/post2/600/600",
-    caption: "주말 나들이 🌿",
-    likes: 256,
-    liked: false,
-    comments: [
-      { id: 1, user: "friend_03", text: "어디야?? 나도 가고싶다", blind: false },
     ],
   },
 ];
 
-// 혐오표현 탐지 API 호출
-// 혐오표현 탐지 API 호출 부분 수정
 const checkHate = async (text) => {
   try {
-    // 1. 방금 찾은 허깅페이스 Direct URL 뒤에 /predict를 붙입니다.
     const response = await fetch("https://jinwoo1251a-instagram-hate-detector.hf.space/predict", {
+
+
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      // 2. 서버(FastAPI)에서 'text'라는 이름으로 받기로 했으니 그대로 맞춰줍니다.
       body: JSON.stringify({ text: text }),
     });
-
-    if (!response.ok) throw new Error("네트워크 응답에 문제가 있습니다.");
-
     const data = await response.json();
-    
-    // 3. 서버 응답 결과(is_hate: true/false)를 반환합니다.
-    console.log("AI 판독 결과:", data);
     return data.is_hate; 
-    
   } catch (error) {
-    console.error("AI 서버 연결 실패:", error);
-    // 서버가 꺼져있을 경우 안전하게 false(정상)를 반환하거나 에러 처리를 합니다.
     return false;
   }
 };
 
-// 댓글 컴포넌트
 function Comments({ comments, postId, onAddComment }) {
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [reportReason, setReportReason] = useState("");
+  const [otherReason, setOtherReason] = useState("");
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -74,148 +52,142 @@ function Comments({ comments, postId, onAddComment }) {
     setLoading(false);
   };
 
-  return (
-    <div className="comments-section">
-      {/* 댓글 목록 */}
-      <ul className="comment-list">
-        {comments.map((c) => (
-          <li key={c.id} className="comment-item">
-            {c.blind ? (
-              <span className="blind-comment">🚫 블라인드 처리된 댓글입니다.</span>
-            ) : (
-              <>
-                <span className="comment-user">{c.user}</span>
-                <span className="comment-text">{c.text}</span>
-              </>
-            )}
-          </li>
-        ))}
-      </ul>
-
-      {/* 댓글 입력 */}
-      <form className="comment-form" onSubmit={handleSubmit}>
-        <input
-          className="comment-input"
-          type="text"
-          placeholder="댓글 달기..."
-          value={input}
-          onChange={(e) => setInput(e.target.value)}
-          disabled={loading}
-        />
-        <button
-          className="comment-submit"
-          type="submit"
-          disabled={!input.trim() || loading}
-        >
-          {loading ? "확인 중..." : "게시"}
-        </button>
-      </form>
-    </div>
-  );
-}
-
-// 피드 카드 컴포넌트
-function FeedCard({ post, onLike, onAddComment }) {
-  return (
-    <div className="feed-card">
-      {/* 헤더 */}
-      <div className="feed-header">
-        <div className="feed-user-info">
-          <img src={post.avatar} alt={post.user} className="avatar" />
-          <span className="username">{post.user}</span>
-        </div>
-        <BsThreeDots className="more-icon" />
-      </div>
-
-      {/* 이미지 */}
-      <img src={post.image} alt="post" className="feed-image" />
-
-      {/* 액션 버튼 */}
-      <div className="feed-actions">
-        <div className="action-left">
-          <button className="action-btn" onClick={() => onLike(post.id)}>
-            {post.liked
-              ? <AiFillHeart className="heart-icon liked" />
-              : <AiOutlineHeart className="heart-icon" />}
-          </button>
-          <button className="action-btn">
-            <BsChat className="action-icon" />
-          </button>
-          <button className="action-btn">
-            <BsCursor className="action-icon" />
-          </button>
-        </div>
-        <button className="action-btn">
-          <BsBookmark className="action-icon" />
-        </button>
-      </div>
-
-      {/* 좋아요 수 */}
-      <div className="feed-likes">좋아요 {post.likes}개</div>
-
-      {/* 캡션 */}
-      <div className="feed-caption">
-        <span className="username">{post.user}</span>
-        <span className="caption-text"> {post.caption}</span>
-      </div>
-
-      {/* 댓글 */}
-      <Comments
-        comments={post.comments}
-        postId={post.id}
-        onAddComment={onAddComment}
-      />
-    </div>
-  );
-}
-
-// 메인 앱
-export default function App() {
-  const [posts, setPosts] = useState(INITIAL_POSTS);
-
-  const handleLike = (postId) => {
-    setPosts(posts.map((p) =>
-      p.id === postId
-        ? { ...p, liked: !p.liked, likes: p.liked ? p.likes - 1 : p.likes + 1 }
-        : p
-    ));
+  const handleReportSubmit = () => {
+    if (!reportReason) return alert("신고 사유를 선택해주세요.");
+    alert("신고를 완료하였습니다.");
+    setIsModalOpen(false);
+    setReportReason("");
+    setOtherReason("");
   };
 
+  return (
+    <div className="comments-section-wrapper">
+      {/* 1. 댓글 리스트 영역: 여기만 스크롤이 생깁니다 */}
+      <div className="comment-list-container">
+        <ul className="comment-list">
+          {comments.map((c) => (
+            <li key={c.id} className="comment-item">
+              <div className="comment-row">
+                <div className="comment-main">
+                  {c.blind ? (
+                    <span className="blind-comment">🚫 블라인드 처리된 댓글입니다.</span>
+                  ) : (
+                    <>
+                      <span className="comment-user">{c.user}</span>
+                      <span className="comment-text">{c.text}</span>
+                    </>
+                  )}
+                </div>
+                <button className="report-bell-btn" onClick={() => setIsModalOpen(true)}>
+                  <AiOutlineBell />
+                </button>
+              </div>
+            </li>
+          ))}
+        </ul>
+      </div>
+
+      {/* 2. 댓글 입력창 영역: 무조건 바닥에 고정됩니다 */}
+      <form className="comment-form" onSubmit={handleSubmit}>
+        <input className="comment-input" type="text" placeholder="댓글 달기..." value={input} onChange={(e) => setInput(e.target.value)} disabled={loading} />
+        <button className="comment-submit" type="submit" disabled={!input.trim() || loading}>
+          {loading ? "..." : "게시"}
+        </button>
+      </form>
+
+      {/* 신고 모달 */}
+      {isModalOpen && (
+        <div className="modal-root">
+          <div className="modal-overlay" onClick={() => setIsModalOpen(false)} />
+          <div className="modal-box">
+            <div className="modal-header">
+              <h2>신고하기</h2>
+              <p>이 댓글을 신고하는 사유를 선택해주세요.</p>
+            </div>
+            <div className="modal-body">
+              <select className="modal-select" value={reportReason} onChange={(e) => setReportReason(e.target.value)}>
+                <option value="">사유 선택</option>
+                <option value="hate">혐오 표현 및 차별</option>
+                <option value="spam">스팸 및 홍보</option>
+                <option value="abuse">언어 폭력</option>
+                <option value="other">기타</option>
+              </select>
+              <textarea className="modal-textarea" placeholder="구체적인 사유를 입력해주세요" value={otherReason} onChange={(e) => setOtherReason(e.target.value)} />
+            </div>
+            <div className="modal-footer">
+              <button className="confirm-btn" onClick={handleReportSubmit}>확인</button>
+              <button className="cancel-btn" onClick={() => setIsModalOpen(false)}>취소</button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function FeedCard({ post, onLike, onAddComment }) {
+  return (
+    <div className="feed-card-pc">
+      <div className="feed-left">
+        <img src={post.image} alt="post" className="feed-image-pc" />
+      </div>
+
+      <div className="feed-right">
+        <div className="feed-right-header">
+          <div className="feed-user-info">
+            <img src={post.avatar} alt={post.user} className="avatar" />
+            <span className="username">{post.user}</span>
+          </div>
+          <BsThreeDots className="more-icon" />
+        </div>
+
+        {/* 캡션과 댓글 영역을 포함하는 메인 영역 */}
+        <div className="feed-right-main">
+          <div className="feed-caption">
+            <span className="username">{post.user}</span>
+            <span className="caption-text"> {post.caption}</span>
+          </div>
+          <Comments comments={post.comments} postId={post.id} onAddComment={onAddComment} />
+        </div>
+
+        <div className="feed-right-footer">
+          <div className="feed-actions">
+            <div className="action-left">
+              <button className="action-btn" onClick={() => onLike(post.id)}>
+                {post.liked ? <AiFillHeart className="heart-icon liked" /> : <AiOutlineHeart className="heart-icon" />}
+              </button>
+              <BsChat size={22} className="action-icon" />
+              <BsCursor size={22} className="action-icon" />
+            </div>
+            <BsBookmark size={22} />
+          </div>
+          <div className="feed-likes">좋아요 {post.likes}개</div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+export default function App() {
+  const [posts, setPosts] = useState(INITIAL_POSTS);
+  
+  const handleLike = (postId) => {
+    setPosts(posts.map((p) => p.id === postId ? { ...p, liked: !p.liked, likes: p.liked ? p.likes - 1 : p.likes + 1 } : p ));
+  };
+  
   const handleAddComment = (postId, text, isHate) => {
     setPosts(posts.map((p) => {
       if (p.id !== postId) return p;
-      const newComment = {
-        id: p.comments.length + 1,
-        user: "나",
-        text,
-        blind: isHate,
-      };
-      return { ...p, comments: [...p.comments, newComment] };
+      return { ...p, comments: [...p.comments, { id: Date.now(), user: "나", text, blind: isHate }] };
     }));
   };
 
   return (
     <div className="app">
-      {/* 네비게이션 */}
-      <nav className="navbar">
-        <div className="nav-inner">
-          <span className="nav-logo">Instagram</span>
-          <div className="nav-icons">
-            <AiOutlineHeart size={24} />
-            <BsChat size={24} />
-          </div>
-        </div>
-      </nav>
-
-      {/* 피드 */}
+      <nav className="navbar"><span className="nav-logo">Instagram</span></nav>
       <main className="feed-container">
-        {posts.map((post) => (
-          <FeedCard
-            key={post.id}
-            post={post}
-            onLike={handleLike}
-            onAddComment={handleAddComment}
-          />
+        {posts.map((post) => ( 
+          <FeedCard key={post.id} post={post} onLike={handleLike} onAddComment={handleAddComment} /> 
         ))}
       </main>
     </div>
