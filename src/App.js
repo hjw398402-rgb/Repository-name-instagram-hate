@@ -2,7 +2,7 @@ import { useState } from "react";
 import { AiOutlineHeart, AiFillHeart, AiOutlineBell } from "react-icons/ai";
 import { BsThreeDots, BsChat, BsCursor, BsBookmark } from "react-icons/bs";
 import "./App.css";
-
+ 
 const INITIAL_POSTS = [
   {
     id: 1,
@@ -18,51 +18,61 @@ const INITIAL_POSTS = [
     ],
   },
 ];
-
+ 
 const checkHate = async (text) => {
   try {
     const response = await fetch("https://jinwoo1251a-instagram-hate-detector.hf.space/predict", {
-
-
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ text: text }),
     });
     const data = await response.json();
-    return data.is_hate; 
+    return data.is_hate;
   } catch (error) {
     return false;
   }
 };
-
-function Comments({ comments, postId, onAddComment }) {
+ 
+function Comments({ comments, postId, onAddComment, onBlindComment }) {
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
-  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [hateAlert, setHateAlert] = useState(false);        // 혐오표현 알림
+  const [reportModal, setReportModal] = useState(null);     // 신고할 댓글 id
   const [reportReason, setReportReason] = useState("");
   const [otherReason, setOtherReason] = useState("");
-
+ 
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!input.trim()) return;
     setLoading(true);
     const isHate = await checkHate(input.trim());
-    onAddComment(postId, input.trim(), isHate);
+ 
+    if (isHate) {
+      // 혐오표현이면 알림만 띄우고 댓글 올리지 않음
+      setHateAlert(true);
+      setInput("");
+      setLoading(false);
+      return;
+    }
+ 
+    // 정상 댓글만 올라감
+    onAddComment(postId, input.trim());
     setInput("");
     setLoading(false);
   };
-
+ 
   const handleReportSubmit = () => {
     if (!reportReason) return alert("신고 사유를 선택해주세요.");
-    alert("신고를 완료하였습니다.");
-    setIsModalOpen(false);
+    // 신고된 댓글 블라인드 처리
+    onBlindComment(postId, reportModal);
+    setReportModal(null);
     setReportReason("");
     setOtherReason("");
   };
-
+ 
   return (
     <div className="comments-section-wrapper">
-      {/* 1. 댓글 리스트 영역: 여기만 스크롤이 생깁니다 */}
+      {/* 댓글 리스트 */}
       <div className="comment-list-container">
         <ul className="comment-list">
           {comments.map((c) => (
@@ -78,27 +88,53 @@ function Comments({ comments, postId, onAddComment }) {
                     </>
                   )}
                 </div>
-                <button className="report-bell-btn" onClick={() => setIsModalOpen(true)}>
-                  <AiOutlineBell />
-                </button>
+                {!c.blind && (
+                  <button className="report-bell-btn" onClick={() => setReportModal(c.id)}>
+                    <AiOutlineBell />
+                  </button>
+                )}
               </div>
             </li>
           ))}
         </ul>
       </div>
-
-      {/* 2. 댓글 입력창 영역: 무조건 바닥에 고정됩니다 */}
+ 
+      {/* 댓글 입력창 */}
       <form className="comment-form" onSubmit={handleSubmit}>
-        <input className="comment-input" type="text" placeholder="댓글 달기..." value={input} onChange={(e) => setInput(e.target.value)} disabled={loading} />
+        <input
+          className="comment-input"
+          type="text"
+          placeholder="댓글 달기..."
+          value={input}
+          onChange={(e) => setInput(e.target.value)}
+          disabled={loading}
+        />
         <button className="comment-submit" type="submit" disabled={!input.trim() || loading}>
           {loading ? "..." : "게시"}
         </button>
       </form>
-
-      {/* 신고 모달 */}
-      {isModalOpen && (
+ 
+      {/* 혐오표현 탐지 알림 */}
+      {hateAlert && (
         <div className="modal-root">
-          <div className="modal-overlay" onClick={() => setIsModalOpen(false)} />
+          <div className="modal-overlay" onClick={() => setHateAlert(false)} />
+          <div className="modal-box">
+            <div className="hate-alert-icon">🚫</div>
+            <h2 className="hate-alert-title">혐오표현이 탐지되었습니다!</h2>
+            <p className="hate-alert-desc">
+              작성하신 댓글에 혐오표현이 포함되어 있어 게시할 수 없습니다.
+            </p>
+            <button className="confirm-btn" style={{ width: "100%" }} onClick={() => setHateAlert(false)}>
+              확인
+            </button>
+          </div>
+        </div>
+      )}
+ 
+      {/* 신고 모달 */}
+      {reportModal && (
+        <div className="modal-root">
+          <div className="modal-overlay" onClick={() => setReportModal(null)} />
           <div className="modal-box">
             <div className="modal-header">
               <h2>신고하기</h2>
@@ -112,11 +148,16 @@ function Comments({ comments, postId, onAddComment }) {
                 <option value="abuse">언어 폭력</option>
                 <option value="other">기타</option>
               </select>
-              <textarea className="modal-textarea" placeholder="구체적인 사유를 입력해주세요" value={otherReason} onChange={(e) => setOtherReason(e.target.value)} />
+              <textarea
+                className="modal-textarea"
+                placeholder="구체적인 사유를 입력해주세요"
+                value={otherReason}
+                onChange={(e) => setOtherReason(e.target.value)}
+              />
             </div>
             <div className="modal-footer">
               <button className="confirm-btn" onClick={handleReportSubmit}>확인</button>
-              <button className="cancel-btn" onClick={() => setIsModalOpen(false)}>취소</button>
+              <button className="cancel-btn" onClick={() => setReportModal(null)}>취소</button>
             </div>
           </div>
         </div>
@@ -124,14 +165,13 @@ function Comments({ comments, postId, onAddComment }) {
     </div>
   );
 }
-
-function FeedCard({ post, onLike, onAddComment }) {
+ 
+function FeedCard({ post, onLike, onAddComment, onBlindComment }) {
   return (
     <div className="feed-card-pc">
       <div className="feed-left">
         <img src={post.image} alt="post" className="feed-image-pc" />
       </div>
-
       <div className="feed-right">
         <div className="feed-right-header">
           <div className="feed-user-info">
@@ -140,16 +180,18 @@ function FeedCard({ post, onLike, onAddComment }) {
           </div>
           <BsThreeDots className="more-icon" />
         </div>
-
-        {/* 캡션과 댓글 영역을 포함하는 메인 영역 */}
         <div className="feed-right-main">
           <div className="feed-caption">
             <span className="username">{post.user}</span>
             <span className="caption-text"> {post.caption}</span>
           </div>
-          <Comments comments={post.comments} postId={post.id} onAddComment={onAddComment} />
+          <Comments
+            comments={post.comments}
+            postId={post.id}
+            onAddComment={onAddComment}
+            onBlindComment={onBlindComment}
+          />
         </div>
-
         <div className="feed-right-footer">
           <div className="feed-actions">
             <div className="action-left">
@@ -167,27 +209,51 @@ function FeedCard({ post, onLike, onAddComment }) {
     </div>
   );
 }
-
+ 
 export default function App() {
   const [posts, setPosts] = useState(INITIAL_POSTS);
-  
+ 
   const handleLike = (postId) => {
-    setPosts(posts.map((p) => p.id === postId ? { ...p, liked: !p.liked, likes: p.liked ? p.likes - 1 : p.likes + 1 } : p ));
+    setPosts(posts.map((p) =>
+      p.id === postId ? { ...p, liked: !p.liked, likes: p.liked ? p.likes - 1 : p.likes + 1 } : p
+    ));
   };
-  
-  const handleAddComment = (postId, text, isHate) => {
+ 
+  // 정상 댓글만 추가
+  const handleAddComment = (postId, text) => {
     setPosts(posts.map((p) => {
       if (p.id !== postId) return p;
-      return { ...p, comments: [...p.comments, { id: Date.now(), user: "나", text, blind: isHate }] };
+      return { ...p, comments: [...p.comments, { id: Date.now(), user: "나", text, blind: false }] };
     }));
   };
-
+ 
+  // 신고된 댓글 블라인드 처리
+  const handleBlindComment = (postId, commentId) => {
+    setPosts(posts.map((p) => {
+      if (p.id !== postId) return p;
+      return {
+        ...p,
+        comments: p.comments.map((c) =>
+          c.id === commentId ? { ...c, blind: true } : c
+        ),
+      };
+    }));
+  };
+ 
   return (
     <div className="app">
-      <nav className="navbar"><span className="nav-logo">Instagram</span></nav>
+      <nav className="navbar">
+        <span className="nav-logo">Instagram</span>
+      </nav>
       <main className="feed-container">
-        {posts.map((post) => ( 
-          <FeedCard key={post.id} post={post} onLike={handleLike} onAddComment={handleAddComment} /> 
+        {posts.map((post) => (
+          <FeedCard
+            key={post.id}
+            post={post}
+            onLike={handleLike}
+            onAddComment={handleAddComment}
+            onBlindComment={handleBlindComment}
+          />
         ))}
       </main>
     </div>

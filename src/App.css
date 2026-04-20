@@ -82,3 +82,7 @@ body { background: #fafafa; font-family: -apple-system, sans-serif; color: #2626
 .confirm-btn { flex: 1; background: #ed4956; color: white; border: none; padding: 12px; border-radius: 6px; font-weight: bold; cursor: pointer; }
 .cancel-btn { flex: 1; background: #efefef; border: none; padding: 12px; border-radius: 6px; cursor: pointer; }
 .blind-comment { color: #8e8e8e; font-style: italic; }
+/* 혐오표현 탐지 알림 */
+.hate-alert-icon { font-size: 48px; margin-bottom: 16px; }
+.hate-alert-title { font-size: 18px; font-weight: 700; margin-bottom: 10px; color: #262626; }
+.hate-alert-desc { font-size: 14px; color: #8e8e8e; margin-bottom: 20px; line-height: 1.5; }
