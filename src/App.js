@@ -17,11 +17,60 @@ const INITIAL_POSTS = [
       { id: 2, user: "friend_02", text: "부럽다 ㅠㅠ", blind: false },
     ],
   },
+  {
+    id: 2,
+    user: "user_02",
+    avatar: "https://i.pravatar.cc/40?img=2",
+    image: "https://picsum.photos/seed/post2/800/800",
+    caption: "오랜만에 외출! 날씨 너무 좋다 ☀️",
+    likes: 45,
+    liked: false,
+    comments: [
+      { id: 3, user: "friend_03", text: "어디 갔어??", blind: false },
+    ],
+  },
+  {
+    id: 3,
+    user: "user_03",
+    avatar: "https://i.pravatar.cc/40?img=3",
+    image: "https://picsum.photos/seed/post3/800/800",
+    caption: "맛있는 저녁 식사 🍽️ #먹스타그램",
+    likes: 89,
+    liked: true,
+    comments: [],
+  },
+  {
+    id: 4,
+    user: "user_04",
+    avatar: "https://i.pravatar.cc/40?img=4",
+    image: "https://picsum.photos/seed/post4/800/800",
+    caption: "코딩 공부 중... 💻 언제 다 하지",
+    likes: 21,
+    liked: false,
+    comments: [
+      { id: 4, user: "friend_01", text: "파이팅!!", blind: false },
+    ],
+  },
+  {
+    id: 5,
+    user: "user_05",
+    avatar: "https://i.pravatar.cc/40?img=5",
+    image: "https://picsum.photos/seed/post5/800/800",
+    caption: "귀여운 고양이 보고 가세요 🐈",
+    likes: 302,
+    liked: false,
+    comments: [
+      { id: 5, user: "friend_04", text: "심쿵...", blind: false },
+      { id: 6, user: "friend_05", text: "너무 귀여워 ㅠㅠ", blind: false },
+    ],
+  }
 ];
  
+const API_URL = process.env.REACT_APP_API_URL || "http://localhost:8001";
+
 const checkHate = async (text) => {
   try {
-    const response = await fetch("https://jinwoo1251a-instagram-hate-detector.hf.space/predict", {
+    const response = await fetch(`${API_URL}/check`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ text: text }),
@@ -203,7 +252,7 @@ function FeedCard({ post, onLike, onAddComment, onBlindComment }) {
             </div>
             <BsBookmark size={22} />
           </div>
-          <div className="feed-likes">좋아요 {post.likes}개</div>
+          <div className="feed-likes">좋아요 {post.likes}개</div> 
         </div>
       </div>
     </div>
